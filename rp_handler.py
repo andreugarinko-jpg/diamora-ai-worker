@@ -1,10 +1,9 @@
 import runpod
 import os
 import tempfile
-import boto3
+import base64
 from PIL import Image
 import torch
-# Assumes TRELLIS is installed in the container environment
 from trellis.pipelines import TrellisImageTo3DPipeline
 
 # Initialize model at container start to avoid cold-start overhead per request
@@ -12,14 +11,6 @@ print("Loading TRELLIS model into VRAM...")
 pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-large")
 pipeline.cuda()
 print("Model loaded successfully.")
-
-# Setup S3/R2 client for uploading the resulting mesh
-s3 = boto3.client('s3',
-    endpoint_url=os.environ.get('R2_ENDPOINT_URL'),
-    aws_access_key_id=os.environ.get('R2_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('R2_SECRET_ACCESS_KEY')
-)
-R2_BUCKET = os.environ.get('R2_BUCKET_NAME', 'diamora-meshes')
 
 def handler(job):
     job_input = job.get('input', {})
@@ -30,10 +21,6 @@ def handler(job):
         return {"error": "Missing 'prompt' in input."}
     
     try:
-        # In a real scenario, you'd convert the text prompt to an image first, 
-        # or use the text-to-3D pipeline if available. 
-        # TRELLIS usually relies on image-to-3D. For text, we'd pipe through SDXL first.
-        # Assuming we receive an image URL for the 3D generation:
         image_url = job_input.get('image_url')
         if not image_url:
             return {"error": "Missing 'image_url' to generate 3D mesh from."}
@@ -62,18 +49,16 @@ def handler(job):
         mesh = postprocessing_utils.to_mesh(outputs)
         mesh.export(glb_path)
         
-        # Upload to Cloudflare R2
-        file_name = f"{job['id']}.glb"
-        s3.upload_file(glb_path, R2_BUCKET, file_name)
+        # Read file as base64
+        with open(glb_path, "rb") as f:
+            glb_base64 = base64.b64encode(f.read()).decode('utf-8')
         
         # Clean up
         os.remove(glb_path)
         
-        # Return public URL of the uploaded mesh
-        public_url = f"https://pub-xxxxxx.r2.dev/{file_name}"
-        
+        # Return the base64 string directly to the Cloudflare Worker
         return {
-            "mesh_url": public_url,
+            "mesh_base64": glb_base64,
             "status": "success"
         }
     except Exception as e:

@@ -25,7 +25,6 @@ RUN git clone https://github.com/microsoft/TRELLIS.git /workspace/TRELLIS
 WORKDIR /workspace/TRELLIS
 
 # Install TRELLIS dependencies
-RUN pip install -r requirements.txt
 RUN pip install ninja spconv-cu118
 RUN pip install imageio imageio-ffmpeg trimesh
 RUN pip install runpod boto3 requests

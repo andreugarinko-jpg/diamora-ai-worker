@@ -21,7 +21,7 @@ RUN pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.py
 RUN pip install xformers==0.0.23.post1 --index-url https://download.pytorch.org/whl/cu118
 
 # Clone TRELLIS
-RUN git clone https://github.com/microsoft/TRELLIS.git /workspace/TRELLIS
+RUN git clone --recurse-submodules https://github.com/microsoft/TRELLIS.git /workspace/TRELLIS
 WORKDIR /workspace/TRELLIS
 
 # Install TRELLIS dependencies
@@ -29,9 +29,8 @@ RUN pip install ninja spconv-cu118
 RUN pip install imageio imageio-ffmpeg trimesh
 RUN pip install runpod boto3 requests
 
-# Install TRELLIS as a package
-RUN pip install -e .
-
+# Set PYTHONPATH so python can find the trellis module
+ENV PYTHONPATH="/workspace/TRELLIS:${PYTHONPATH}"
 # Copy our custom handler
 COPY rp_handler.py /workspace/rp_handler.py
 WORKDIR /workspace

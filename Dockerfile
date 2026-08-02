@@ -38,8 +38,5 @@ ENV PYTHONPATH="/workspace/TRELLIS"
 COPY rp_handler.py /workspace/rp_handler.py
 WORKDIR /workspace
 
-# Pre-download the model weights during the Docker build so it starts instantly on RunPod
-RUN python -c "from trellis.pipelines import TrellisImageTo3DPipeline; TrellisImageTo3DPipeline.from_pretrained('JeffreyXiang/TRELLIS-image-large')"
-
 # Run the handler
 CMD ["python", "-u", "/workspace/rp_handler.py"]

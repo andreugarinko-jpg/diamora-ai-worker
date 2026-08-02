@@ -29,8 +29,11 @@ RUN pip install ninja spconv-cu118
 RUN pip install imageio imageio-ffmpeg trimesh
 RUN pip install runpod boto3 requests
 
+# Install standard python dependencies
+RUN pip install numpy scipy Pillow transformers huggingface_hub safetensors accelerate tqdm
+
 # Set PYTHONPATH so python can find the trellis module
-ENV PYTHONPATH="/workspace/TRELLIS:${PYTHONPATH}"
+ENV PYTHONPATH="/workspace/TRELLIS"
 # Copy our custom handler
 COPY rp_handler.py /workspace/rp_handler.py
 WORKDIR /workspace
